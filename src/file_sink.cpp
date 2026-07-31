@@ -120,6 +120,23 @@ bool truncate_to(std::FILE* fp, Offset length) {
 #endif
 }
 
+/// Opens a file, using the bounds-checked variant where the platform has one.
+///
+/// MSVC deprecates std::fopen and reports C4996 at /W4, which becomes a build
+/// error once warnings-as-errors is enabled. fopen_s is the supported
+/// replacement: it returns an errno_t and writes the handle through a pointer,
+/// setting it to null on failure. Suppressing the warning with
+/// _CRT_SECURE_NO_WARNINGS would silence the whole CRT category across the
+/// target, so the call is adapted instead.
+std::FILE* open_file(const char* path, const char* mode) {
+#if defined(_MSC_VER)
+  std::FILE* fp = nullptr;
+  return fopen_s(&fp, path, mode) == 0 ? fp : nullptr;
+#else
+  return std::fopen(path, mode);
+#endif
+}
+
 /// Finds the offset just past the last '\n', i.e. the end of the last COMPLETE
 /// NDJSON line. Returns 0 when the file contains no newline at all. Scans
 /// backwards in blocks so a multi-gigabyte file is never loaded into memory.
@@ -286,9 +303,9 @@ class FileSink::Impl {
       return Status(ErrorCode::SinkError, "FileSink: injected open failure");
     }
     // "r+b" so the tail can be inspected and repaired; created when absent.
-    file_ = std::fopen(path_.c_str(), "r+b");
+    file_ = open_file(path_.c_str(), "r+b");
     if (file_ == nullptr) {
-      file_ = std::fopen(path_.c_str(), "w+b");
+      file_ = open_file(path_.c_str(), "w+b");
     }
     if (file_ == nullptr) {
       return Status(ErrorCode::SinkError,
