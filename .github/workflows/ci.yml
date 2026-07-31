@@ -22,18 +22,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # STAGED MSVC ROLLOUT: warnings-as-errors is enforced on GCC/Clang now.
-      # On MSVC it stays OFF for this first native run because the code has
-      # never been compiled with /W4 there and unknown warnings would block the
-      # release for reasons unrelated to correctness. Once a native MSVC run is
-      # green, flip the Windows value to 'ON' and re-run before tagging.
-      # Until then finding #18 remains PARTIALLY resolved.
+      # MSVC ROLLOUT COMPLETE. Warnings-as-errors is now enforced on every
+      # platform, MSVC included.
+      #
+      # It was staged deliberately: the code had never been compiled by MSVC, so
+      # the Windows arm ran with /W4 and warnings-as-errors OFF first, to see
+      # what /W4 actually reported rather than have unknown warnings block the
+      # release. That run surfaced two C4996 deprecation warnings for std::fopen
+      # in FileSink, which were fixed at the call site (see file_sink.cpp) rather
+      # than suppressed. The following run was green with no MSVC warnings, so
+      # /WX is enabled here and any new MSVC warning is now a build failure.
+      # Finding #18 is resolved.
       - name: Configure
         run: >
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DPLAYERTRACE_ENABLE_WARNINGS=ON
-          -DPLAYERTRACE_ENABLE_WERROR=${{ matrix.os == 'windows-latest' && 'OFF' || 'ON' }}
+          -DPLAYERTRACE_ENABLE_WERROR=ON
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }} -j 4
