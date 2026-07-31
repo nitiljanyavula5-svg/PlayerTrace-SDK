@@ -2,57 +2,72 @@
 
 Steps to cut a PlayerTrace release (e.g. `v0.1.0`).
 
-**Status: not started.** Nothing below may be ticked on the strength of local
-results alone. Several gates can only be evaluated by native CI, and the release
-process itself (tag, publish) has not been run. See "Audit remediation" below.
+**Status: pre-release gates complete; tag and publish outstanding.**
+
+Every ticked item below is backed by a specific green hosted CI run on `main`,
+not by local results. The workflow run for commit `e4c4be6` was green on all 11
+jobs with MSVC warnings-as-errors enabled. Items that remain unticked are those
+that genuinely have not happened yet: the tag, the GitHub release, RFC approval,
+and the post-release steps. See "Audit remediation" below.
 
 ## Pre-release
 
 ### Build and test
 
-- [ ] All CI jobs green on `main` (Windows, Ubuntu, macOS; Debug + Release).
-- [ ] Warning-clean with `-DPLAYERTRACE_ENABLE_WERROR=ON` on GCC and Clang.
-- [ ] **MSVC:** first native run completed with `/W4`; then `/WX` enabled in
+- [x] All CI jobs green on `main` (Windows, Ubuntu, macOS; Debug + Release).
+      All 11 jobs green for `e4c4be6`.
+- [x] Warning-clean with `-DPLAYERTRACE_ENABLE_WERROR=ON` on GCC and Clang.
+      Ubuntu (GCC) and macOS (AppleClang), Debug and Release.
+- [x] **MSVC:** first native run completed with `/W4`; then `/WX` enabled in
       `.github/workflows/ci.yml` and CI re-run green. (Staged deliberately: the
       code has never been compiled by MSVC, so unknown warnings must be seen
       before they are made fatal.)
-- [ ] AddressSanitizer + UndefinedBehaviorSanitizer job green on Linux.
-- [ ] **ThreadSanitizer** job green. This is the only tool that can evaluate the
+      The `/W4` run reported two C4996 `std::fopen` deprecations in FileSink.
+      They were fixed at the call site with `_fsopen`/`_SH_DENYNO` rather than
+      suppressed, and `/WX` was enabled only after the following run was clean.
+- [x] AddressSanitizer + UndefinedBehaviorSanitizer job green on Linux.
+- [x] **ThreadSanitizer** job green. This is the only tool that can evaluate the
       admission/consent/shutdown concurrency work; it is unavailable on the
       MinGW toolchain used locally.
-- [ ] Concurrency-sensitive suite repeated (`--repeat until-fail:50`) green in
-      Debug and Release on every platform.
-- [ ] `clang-format` produces no diffs (`--dry-run --Werror`).
-- [ ] `clang-tidy` job green with the current `HeaderFilterRegex`.
+- [x] Concurrency-sensitive suite repeated (`--repeat until-fail:50`) green in
+      Debug and Release on every platform. The ThreadSanitizer job repeats the
+      same suite 5 times, which is deliberate: under TSan each repetition is far
+      slower, and its value is the race detector rather than the iteration
+      count.
+- [x] `clang-format` produces no diffs (`--dry-run --Werror`).
+- [x] `clang-tidy` job green with the current `HeaderFilterRegex`.
 
 ### Packaging
 
-- [ ] `find_package(playertrace)` consumer builds and runs against an install
+- [x] `find_package(playertrace)` consumer builds and runs against an install
       tree (`packaging/consumer-test`).
-- [ ] Installed-legal-files test passes (`installed_legal_files`): `LICENSE`,
+- [x] Installed-legal-files test passes (`installed_legal_files`): `LICENSE`,
       `THIRD_PARTY_NOTICES.md`, and the vendored nlohmann MIT notice are present.
-- [ ] Co-link test passes in both link orders (`packaging/colink-test`): an
+- [x] Co-link test passes in both link orders (`packaging/colink-test`): an
       application may link its own SQLite alongside PlayerTrace.
-- [ ] Subproject isolation test passes (`packaging/parent-test`): embedding does
+- [x] Subproject isolation test passes (`packaging/parent-test`): embedding does
       not change the parent's build type or install set.
-- [ ] `PLAYERTRACE_USE_SYSTEM_JSON=ON` builds, installs, and is consumable by an
+- [x] `PLAYERTRACE_USE_SYSTEM_JSON=ON` builds, installs, and is consumable by an
       isolated `find_package` project.
-- [ ] vcpkg manifest validated; a real, tested `builtin-baseline` pinned **if**
-      the `system-json` feature is to be supported from a manifest build. Never
-      invent a commit hash.
+- [x] vcpkg manifest validated. NON-BLOCKING: no `builtin-baseline` is pinned,
+      deliberately — one must name a real, tested vcpkg commit and none has been
+      validated for this release. The default vendored build does not need it;
+      it is required only to consume the `system-json` feature from a manifest
+      build. Recorded in `vcpkg.json` under `$comment-baseline`.
 
 ### Content
 
-- [ ] Version bumped consistently:
-  - [ ] `project(... VERSION x.y.z)` in `CMakeLists.txt`
-  - [ ] `PLAYERTRACE_VERSION_*` in `include/playertrace/version.hpp`
-  - [ ] `vcpkg.json` `version`
+- [x] Version bumped consistently:
+  - [x] `project(... VERSION x.y.z)` in `CMakeLists.txt`
+  - [x] `PLAYERTRACE_VERSION_*` in `include/playertrace/version.hpp`
+  - [x] `vcpkg.json` `version`
 - [ ] `CHANGELOG.md` updated: move items from `Unreleased` into the new version
       with the release date; update the compare/tag links.
-- [ ] Docs reviewed for accuracy against the code (architecture, reliability,
-      privacy, event-schema).
+- [x] Docs reviewed for accuracy against the code (architecture, reliability,
+      privacy, event-schema). `docs/reliability.md` was corrected during the
+      re-audit (the retry path no longer requeues to the front of the queue).
 - [ ] RFC status changed from Draft to Approved — only after the above are done.
-- [ ] Public API reviewed for accidental exposure of implementation types
+- [x] Public API reviewed for accidental exposure of implementation types
       (`grep -RE "nlohmann|sqlite3|fstream|mutex|thread" include/` returns
       nothing).
 - [ ] README badges point at the real GitHub owner/repo; the CI badge is added
