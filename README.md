@@ -3,13 +3,12 @@
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)
 [![CI](https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/actions/workflows/ci.yml)
-![Status](https://img.shields.io/badge/status-release%20candidate-orange.svg)
+[![Release](https://img.shields.io/github/v/release/nitiljanyavula5-svg/PlayerTrace-SDK?label=release)](https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/releases/latest)
 
-> **Release candidate — not yet tagged or published.** CI is green on Ubuntu,
-> macOS and Windows (Debug and Release) with warnings-as-errors, including MSVC
-> `/W4 /WX`, plus AddressSanitizer/UndefinedBehaviorSanitizer, ThreadSanitizer,
-> `clang-format` and `clang-tidy`. See [Release status](#release-status) for
-> what remains before the release is published.
+> **v0.1.0 is released.** CI is green on Ubuntu, macOS and Windows (Debug and
+> Release) with warnings-as-errors, including MSVC `/W4 /WX`, plus
+> AddressSanitizer/UndefinedBehaviorSanitizer, ThreadSanitizer, `clang-format`
+> and `clang-tidy`. See [Release status](#release-status).
 
 **PlayerTrace is an engine-agnostic C++ telemetry SDK that helps game developers capture structured gameplay events without tying their projects to a specific engine or analytics provider.** It provides asynchronous tracking, offline SQLite persistence, batch processing, consent controls, and replaceable event sinks.
 
@@ -160,19 +159,19 @@ target_link_libraries(your_game PRIVATE playertrace::playertrace)
 
 ## Release status
 
-**Not yet released.** v0.1.0 is a release candidate. Independent audits were
-performed and every confirmed finding was remediated. All 11 hosted CI jobs are
-green on `main`: Ubuntu, macOS and Windows in Debug and Release with
-warnings-as-errors (MSVC at `/W4 /WX`), AddressSanitizer +
-UndefinedBehaviorSanitizer, ThreadSanitizer, a build against a system
-`nlohmann_json` package, `clang-format` and `clang-tidy`.
+**v0.1.0 released 2026-07-31** —
+[release notes and source archive](https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/releases/tag/v0.1.0).
+Independent audits were performed and every confirmed finding was remediated.
+All 11 hosted CI jobs are green on the released commit: Ubuntu, macOS and
+Windows in Debug and Release with warnings-as-errors (MSVC at `/W4 /WX`),
+AddressSanitizer + UndefinedBehaviorSanitizer, ThreadSanitizer, a build against
+a system `nlohmann_json` package, `clang-format` and `clang-tidy`.
 
-What remains before the release is published:
-
-- the annotated `v0.1.0` tag and the GitHub release built from it;
-- a pinned vcpkg `builtin-baseline` — deliberately absent, and non-blocking: the
-  default build vendors every dependency, so a baseline is needed only to
-  consume the optional `system-json` feature from a manifest build.
+One known gap, carried forward deliberately: no vcpkg `builtin-baseline` is
+pinned. This is non-blocking — the default build vendors every dependency, so a
+baseline is needed only to consume the optional `system-json` feature from a
+manifest build. Tracked as
+[issue #2](https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/issues/2).
 
 See [docs/release-checklist.md](docs/release-checklist.md).
 

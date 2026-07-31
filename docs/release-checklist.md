@@ -2,17 +2,15 @@
 
 Steps to cut a PlayerTrace release (e.g. `v0.1.0`).
 
-**Status: pre-release gates complete; tag and publish outstanding.**
+**Status: v0.1.0 released 2026-07-31.**
 
 Every ticked item below is backed by a specific green hosted CI run on `main`,
-not by local results. The workflow run for commit `eacc393` was green on all 11
-jobs with MSVC warnings-as-errors enabled. Items that remain unticked are those
-that genuinely have not happened yet: the tag, the GitHub release, and the
-post-release steps. See "Audit remediation" below.
+not by local results. The workflow run for commit `459d300` — the commit the
+`v0.1.0` tag points at — was green on all 11 jobs with MSVC warnings-as-errors
+enabled. See "Audit remediation" below.
 
-The release-content commit that follows `eacc393` changes documentation only,
-but it must still be green before the tag is created — confirm the run for the
-final commit rather than relying on `eacc393`.
+When cutting a future release, confirm the run for that release's own final
+commit rather than relying on a commit named here.
 
 ## Pre-release
 
@@ -57,7 +55,8 @@ final commit rather than relying on `eacc393`.
       deliberately — one must name a real, tested vcpkg commit and none has been
       validated for this release. The default vendored build does not need it;
       it is required only to consume the `system-json` feature from a manifest
-      build. Recorded in `vcpkg.json` under `$comment-baseline`.
+      build. Recorded in `vcpkg.json` under `$comment-baseline`, and tracked
+      after release as issue #2.
 
 ### Content
 
@@ -91,18 +90,37 @@ final commit rather than relying on `eacc393`.
 
 ## Tag & publish
 
-- [ ] Create an annotated tag: `git tag -a v0.1.0 -m "PlayerTrace 0.1.0"`.
-- [ ] Push the tag: `git push origin v0.1.0`.
-- [ ] Create the GitHub release from the tag; paste the changelog section.
-- [ ] Attach or reference the source archive.
+- [x] Create an annotated tag: `git tag -a v0.1.0 -m "PlayerTrace SDK v0.1.0"`.
+      Tag object `ddd28e7`, dereferencing to commit `459d300`.
+- [x] Push the tag: `git push origin v0.1.0`.
+- [x] Create the GitHub release from the tag; paste the changelog section. The
+      existing tag was reused (`gh release create --verify-tag`), not recreated.
+      Published 2026-07-31, marked latest, not a pre-release.
+- [x] Attach or reference the source archive.
+      `PlayerTrace-SDK-v0.1.0.zip`, 3,179,482 bytes, 123 entries, built with
+      `git archive --format=zip --prefix="PlayerTrace SDK/" v0.1.0`.
+      SHA-256 `2B1C5F707C280303807FCA46AE69EE9E5BF69F7B58C4AB85035BA57196DDA377`,
+      re-verified after downloading the published asset back from GitHub.
 
 ## Post-release
 
-- [ ] Open a new `Unreleased` section in `CHANGELOG.md`. An empty one was
-      already added above `[0.1.0]` when the release content was prepared — fill
-      it in rather than adding a second heading.
-- [ ] Bump to the next development version if appropriate.
-- [ ] File/triage issues for anything deferred during the release.
+- [x] Open a new `Unreleased` section in `CHANGELOG.md`. An empty one sits above
+      `[0.1.0]` — fill it in rather than adding a second heading.
+- [x] Bump to the next development version if appropriate. **Not bumped, and
+      deliberately so.** This project documents no development-version
+      convention: the only stated policy is "adheres to Semantic Versioning"
+      (`CHANGELOG.md`), and `include/playertrace/version.hpp` carries plain
+      integer macros with no pre-release or `-dev` field to hold one. Choosing a
+      number now would invent a policy rather than apply one, would make
+      `PLAYERTRACE_VERSION_STRING` report a version that was never released, and
+      would put a version in `vcpkg.json` that no manifest consumer can resolve.
+      Bump the three version sources together as the *first* step of the next
+      release, once its number is actually decided.
+- [x] File/triage issues for anything deferred during the release. One item was
+      genuinely deferred — the unpinned vcpkg `builtin-baseline` — and is now
+      tracked as issue #2. The v0.2/v0.3 roadmap entries and the documented
+      "Known limitations" are planned scope, not release deferrals, and were
+      deliberately not filed as issues.
 
 ---
 
