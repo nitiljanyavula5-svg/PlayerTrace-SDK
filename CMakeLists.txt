@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 project(playertrace
   VERSION 0.1.0
   DESCRIPTION "Engine-agnostic, privacy-conscious C++17 telemetry SDK"
+  HOMEPAGE_URL "https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK"
   LANGUAGES C CXX)
 
 # Treat this as the top-level project only when built standalone. Everything

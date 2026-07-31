@@ -1,5 +1,15 @@
-# Contact links deliberately omitted: they require absolute URLs, and this
-# repository is kept host-agnostic. GitHub already surfaces "Report a security
-# vulnerability" in the issue chooser on its own once SECURITY.md is present and
-# private vulnerability reporting is enabled in repository settings.
 blank_issues_enabled: false
+
+# Both links below depend on a repository setting being enabled first; until
+# then GitHub renders them but they resolve to 404:
+#   - Security advisories -> Settings > Advanced Security > Private
+#     vulnerability reporting. GitHub also surfaces its own "Report a security
+#     vulnerability" entry here once that is on and SECURITY.md is present.
+#   - Discussions -> Settings > General > Features > Discussions.
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/security/advisories/new
+    about: Report security issues privately through GitHub Security Advisories. Please do not open a public issue.
+  - name: Questions and discussion
+    url: https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/discussions
+    about: Ask questions about using PlayerTrace, or share ideas for future versions.

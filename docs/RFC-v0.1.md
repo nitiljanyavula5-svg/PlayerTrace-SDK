@@ -1,6 +1,7 @@
 # RFC: PlayerTrace SDK v0.1
 
-**Status:** Draft rev. 4 — awaiting approval
+**Status:** Approved (rev. 4) — approved by the project owner on 2026-07-31,
+following green CI on all 11 jobs for commit eacc393.
 
 > ⚠️ **This RFC is a historical design document and is NOT authoritative.**
 > Two independent audits changed several designs described below. Where this
