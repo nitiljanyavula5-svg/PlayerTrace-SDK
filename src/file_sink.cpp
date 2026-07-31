@@ -14,7 +14,11 @@
 
 #if defined(_WIN32)
 #include <io.h>
-#else
+#endif
+#if defined(_MSC_VER)
+#include <share.h>  // _SH_DENYNO for _fsopen
+#endif
+#if !defined(_WIN32)
 #include <fcntl.h>
 #include <unistd.h>
 #endif
@@ -120,18 +124,22 @@ bool truncate_to(std::FILE* fp, Offset length) {
 #endif
 }
 
-/// Opens a file, using the bounds-checked variant where the platform has one.
+/// Opens a file with the same sharing semantics on every platform.
 ///
 /// MSVC deprecates std::fopen and reports C4996 at /W4, which becomes a build
-/// error once warnings-as-errors is enabled. fopen_s is the supported
-/// replacement: it returns an errno_t and writes the handle through a pointer,
-/// setting it to null on failure. Suppressing the warning with
-/// _CRT_SECURE_NO_WARNINGS would silence the whole CRT category across the
-/// target, so the call is adapted instead.
+/// error once warnings-as-errors is enabled. The obvious replacement, fopen_s,
+/// is NOT a drop-in: Microsoft documents that files it opens are not sharable,
+/// so another handle cannot read the file while this one holds it. PlayerTrace
+/// relies on that being possible — the output file is readable while a sink is
+/// live — so fopen_s silently broke reads at runtime while still compiling.
+///
+/// _fsopen with _SH_DENYNO is the accurate equivalent: not deprecated, and it
+/// requests exactly the permissive sharing plain fopen uses. A blanket
+/// _CRT_SECURE_NO_WARNINGS would have hidden the original warning instead of
+/// answering it.
 std::FILE* open_file(const char* path, const char* mode) {
 #if defined(_MSC_VER)
-  std::FILE* fp = nullptr;
-  return fopen_s(&fp, path, mode) == 0 ? fp : nullptr;
+  return _fsopen(path, mode, _SH_DENYNO);
 #else
   return std::fopen(path, mode);
 #endif
