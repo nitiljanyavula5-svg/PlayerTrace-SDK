@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # MSVC ROLLOUT COMPLETE. Warnings-as-errors is now enforced on every
       # platform, MSVC included.
@@ -78,7 +78,7 @@ jobs:
     name: ubuntu / system nlohmann_json package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Uses the in-repo fixture package so the PLAYERTRACE_USE_SYSTEM_JSON code
       # path and the find_dependency() it must emit are exercised without vcpkg.
       - name: Configure, build and install with the system-JSON path
@@ -101,7 +101,7 @@ jobs:
     name: ubuntu / ASan+UBSan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Configure (sanitizers)
         run: >
           cmake -S . -B build
@@ -121,7 +121,7 @@ jobs:
     name: ubuntu / ThreadSanitizer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # TSan is the only tool that can evaluate the admission, consent and
       # shutdown races; ASan/UBSan cannot see them. It is not available on the
       # MinGW toolchain used for local development, so this job is the first
@@ -145,7 +145,7 @@ jobs:
     name: clang-format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install clang-format
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: Check formatting
@@ -158,7 +158,7 @@ jobs:
     name: clang-tidy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install clang-tidy
         run: sudo apt-get update && sudo apt-get install -y clang-tidy
       - name: Configure with a compile database
