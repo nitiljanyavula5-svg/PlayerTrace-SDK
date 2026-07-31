@@ -6,6 +6,57 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.1.0] - 2026-07-31
+
+Initial release: a complete local telemetry pipeline. Every audit
+remediation performed against the release candidate is folded in below;
+because 0.1.0 was never published, those fixes are part of this release
+rather than a separate version.
+
+### Added
+
+- **Event model** — unique event id, name, schema version, UTC timestamp,
+  session id, optional anonymous player id, per-session sequence number, and a
+  flat typed property map (`bool`, `int64_t`, `double`, `std::string`).
+- **Public client API** — `Client::create`, `start_session`, `end_session`,
+  `track`, `flush`, `shutdown`, runtime `set_consent`, and log/error callbacks.
+  No global singleton; multiple independent clients are supported.
+- **Event validation** — rejects invalid names, unsupported/oversized values,
+  reserved keys, duplicate keys, and too many properties.
+- **Asynchronous pipeline** — a bounded, thread-safe in-memory queue with a
+  `RejectNewest` overflow policy and a single background worker; configurable
+  batch size and interval.
+- **Durable storage** — SQLite-backed store with transactional inserts, FIFO
+  retrieval, acknowledgment/deletion, schema versioning, corruption quarantine,
+  and restart recovery. At-least-once delivery after the durable point; unique
+  event ids for downstream deduplication.
+- **Bounded durable storage** — `max_pending_events` cap with a reject-newest
+  policy and a rejection counter, to bound disk usage after a permanent sink
+  failure.
+- **Sinks** — a format-neutral `Sink` interface and a production `FileSink` that
+  writes newline-delimited JSON. Sinks are replaceable and mockable.
+- **Privacy controls** — consent defaults to `Unknown`; runtime revocation
+  discards queued and purges pending events; a `property_filter` callback; random
+  identifiers never derived from personal or hardware data.
+- **Error handling** — exception-free public API built on `Status`, `Result`, and
+  `ErrorCode`; one malformed event or throwing sink never crashes the game.
+- **Tests** — Catch2 unit and integration tests (validation, serialization
+  round-trips, sessions and sequence numbers, concurrent producers, bounded
+  queue, storage restart/duplicate/malformed/schema cases, consent
+  denial/revocation, flush/shutdown idempotency, sink failures). Deterministic;
+  no arbitrary sleeps.
+- **Examples** — `basic_tracking` and a `simulated_game` that demonstrates
+  persistence across a simulated restart.
+- **Build & packaging** — CMake build with vendored dependencies (SQLite,
+  nlohmann/json, Catch2), CMake presets, a vcpkg manifest, install/package
+  targets, and a `find_package` consumer test.
+- **CI** — GitHub Actions on Windows, Ubuntu, and macOS; debug and release;
+  warnings-as-errors; AddressSanitizer + UndefinedBehaviorSanitizer on Linux.
+- **Documentation** — architecture, reliability, privacy, and event-schema docs,
+  plus the design RFC.
+
 ### Fixed — pre-publication review
 
 A further independent review of the prepared repository found four defects that
@@ -215,61 +266,11 @@ are folded into the initial release rather than being a separate version.
   and the sequence-gap contradiction between the architecture and reliability
   docs was resolved.
 
-## [0.1.0] - UNRELEASED
-
-Planned initial release: a complete local telemetry pipeline. **Not yet
-published** — this section is finalized, and its date set, only when the release
-checklist is complete and the tag exists.
-
-### Added
-
-- **Event model** — unique event id, name, schema version, UTC timestamp,
-  session id, optional anonymous player id, per-session sequence number, and a
-  flat typed property map (`bool`, `int64_t`, `double`, `std::string`).
-- **Public client API** — `Client::create`, `start_session`, `end_session`,
-  `track`, `flush`, `shutdown`, runtime `set_consent`, and log/error callbacks.
-  No global singleton; multiple independent clients are supported.
-- **Event validation** — rejects invalid names, unsupported/oversized values,
-  reserved keys, duplicate keys, and too many properties.
-- **Asynchronous pipeline** — a bounded, thread-safe in-memory queue with a
-  `RejectNewest` overflow policy and a single background worker; configurable
-  batch size and interval.
-- **Durable storage** — SQLite-backed store with transactional inserts, FIFO
-  retrieval, acknowledgment/deletion, schema versioning, corruption quarantine,
-  and restart recovery. At-least-once delivery after the durable point; unique
-  event ids for downstream deduplication.
-- **Bounded durable storage** — `max_pending_events` cap with a reject-newest
-  policy and a rejection counter, to bound disk usage after a permanent sink
-  failure.
-- **Sinks** — a format-neutral `Sink` interface and a production `FileSink` that
-  writes newline-delimited JSON. Sinks are replaceable and mockable.
-- **Privacy controls** — consent defaults to `Unknown`; runtime revocation
-  discards queued and purges pending events; a `property_filter` callback; random
-  identifiers never derived from personal or hardware data.
-- **Error handling** — exception-free public API built on `Status`, `Result`, and
-  `ErrorCode`; one malformed event or throwing sink never crashes the game.
-- **Tests** — Catch2 unit and integration tests (validation, serialization
-  round-trips, sessions and sequence numbers, concurrent producers, bounded
-  queue, storage restart/duplicate/malformed/schema cases, consent
-  denial/revocation, flush/shutdown idempotency, sink failures). Deterministic;
-  no arbitrary sleeps.
-- **Examples** — `basic_tracking` and a `simulated_game` that demonstrates
-  persistence across a simulated restart.
-- **Build & packaging** — CMake build with vendored dependencies (SQLite,
-  nlohmann/json, Catch2), CMake presets, a vcpkg manifest, install/package
-  targets, and a `find_package` consumer test.
-- **CI** — GitHub Actions on Windows, Ubuntu, and macOS; debug and release;
-  warnings-as-errors; AddressSanitizer + UndefinedBehaviorSanitizer on Linux.
-- **Documentation** — architecture, reliability, privacy, and event-schema docs,
-  plus the design RFC.
-
 ### Known limitations
 
 - No HTTP upload, retries, rate limiting, or dead-letter queue (planned for v0.2).
 - Deleting rows does not immediately shrink the SQLite file (no auto-VACUUM).
 - A single already-started sink write may complete after consent revocation.
 
-<!-- Comparison links are intentionally omitted while the repository has no
-     canonical URL. Add them once it is published, e.g.
-     [Unreleased]: <repo>/compare/v0.1.0...HEAD -->
-
+[Unreleased]: https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK/releases/tag/v0.1.0

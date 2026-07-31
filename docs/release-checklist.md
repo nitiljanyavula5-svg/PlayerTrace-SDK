@@ -5,23 +5,27 @@ Steps to cut a PlayerTrace release (e.g. `v0.1.0`).
 **Status: pre-release gates complete; tag and publish outstanding.**
 
 Every ticked item below is backed by a specific green hosted CI run on `main`,
-not by local results. The workflow run for commit `e4c4be6` was green on all 11
+not by local results. The workflow run for commit `eacc393` was green on all 11
 jobs with MSVC warnings-as-errors enabled. Items that remain unticked are those
-that genuinely have not happened yet: the tag, the GitHub release, RFC approval,
-and the post-release steps. See "Audit remediation" below.
+that genuinely have not happened yet: the tag, the GitHub release, and the
+post-release steps. See "Audit remediation" below.
+
+The release-content commit that follows `eacc393` changes documentation only,
+but it must still be green before the tag is created — confirm the run for the
+final commit rather than relying on `eacc393`.
 
 ## Pre-release
 
 ### Build and test
 
 - [x] All CI jobs green on `main` (Windows, Ubuntu, macOS; Debug + Release).
-      All 11 jobs green for `e4c4be6`.
+      All 11 jobs green for `eacc393`.
 - [x] Warning-clean with `-DPLAYERTRACE_ENABLE_WERROR=ON` on GCC and Clang.
       Ubuntu (GCC) and macOS (AppleClang), Debug and Release.
 - [x] **MSVC:** first native run completed with `/W4`; then `/WX` enabled in
-      `.github/workflows/ci.yml` and CI re-run green. (Staged deliberately: the
-      code has never been compiled by MSVC, so unknown warnings must be seen
-      before they are made fatal.)
+      `.github/workflows/ci.yml` and CI re-run green. (Staged deliberately: at
+      that point the code had never been compiled by MSVC, so unknown warnings
+      had to be seen before they were made fatal.)
       The `/W4` run reported two C4996 `std::fopen` deprecations in FileSink.
       They were fixed at the call site with `_fsopen`/`_SH_DENYNO` rather than
       suppressed, and `/WX` was enabled only after the following run was clean.
@@ -61,19 +65,29 @@ and the post-release steps. See "Audit remediation" below.
   - [x] `project(... VERSION x.y.z)` in `CMakeLists.txt`
   - [x] `PLAYERTRACE_VERSION_*` in `include/playertrace/version.hpp`
   - [x] `vcpkg.json` `version`
-- [ ] `CHANGELOG.md` updated: move items from `Unreleased` into the new version
-      with the release date; update the compare/tag links.
+- [x] `CHANGELOG.md` updated: move items from `Unreleased` into the new version
+      with the release date; update the compare/tag links. The audit-remediation
+      sections were folded into `[0.1.0] - 2026-07-31` (0.1.0 was never
+      published, so they are not a separate version), a fresh empty
+      `[Unreleased]` was opened above it, and the compare/tag links now use the
+      real slug.
 - [x] Docs reviewed for accuracy against the code (architecture, reliability,
       privacy, event-schema). `docs/reliability.md` was corrected during the
       re-audit (the retry path no longer requeues to the front of the queue).
-- [ ] RFC status changed from Draft to Approved — only after the above are done.
+- [x] RFC status changed from Draft to Approved — only after the above are done.
+      Approved by the project owner on 2026-07-31. The banner marking the RFC as
+      a historical, non-authoritative design document is retained deliberately.
 - [x] Public API reviewed for accidental exposure of implementation types
       (`grep -RE "nlohmann|sqlite3|fstream|mutex|thread" include/` returns
       nothing).
-- [ ] README badges point at the real GitHub owner/repo; the CI badge is added
-      back only once the workflow has actually run.
-- [ ] `HOMEPAGE_URL` in `CMakeLists.txt`, `homepage` in `vcpkg.json`, and the
-      CHANGELOG links use the real repository slug (currently placeholders).
+- [x] README badges point at the real GitHub owner/repo; the CI badge is added
+      back only once the workflow has actually run. The live `ci.yml` badge
+      replaces the static "verified on GCC/MinGW" badge, which CI disproved.
+- [x] `HOMEPAGE_URL` in `CMakeLists.txt`, `homepage` in `vcpkg.json`, and the
+      CHANGELOG links use the real repository slug. `contact_links` were also
+      restored in `.github/ISSUE_TEMPLATE/config.yml`; both of those links 404
+      until Discussions and private vulnerability reporting are enabled in
+      repository settings.
 
 ## Tag & publish
 
@@ -84,7 +98,9 @@ and the post-release steps. See "Audit remediation" below.
 
 ## Post-release
 
-- [ ] Open a new `Unreleased` section in `CHANGELOG.md`.
+- [ ] Open a new `Unreleased` section in `CHANGELOG.md`. An empty one was
+      already added above `[0.1.0]` when the release content was prepared — fill
+      it in rather than adding a second heading.
 - [ ] Bump to the next development version if appropriate.
 - [ ] File/triage issues for anything deferred during the release.
 

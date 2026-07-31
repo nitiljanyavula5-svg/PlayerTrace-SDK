@@ -3,6 +3,7 @@
   "name": "playertrace",
   "version": "0.1.0",
   "description": "Engine-agnostic, privacy-conscious C++17 telemetry SDK for game developers.",
+  "homepage": "https://github.com/nitiljanyavula5-svg/PlayerTrace-SDK",
   "license": "Apache-2.0",
   "$comment-dependencies": "PlayerTrace vendors SQLite, nlohmann/json and Catch2 under third_party/, so the default build needs no vcpkg packages at all. Only the optional system-json feature pulls anything in.",
   "dependencies": [],
