@@ -12,8 +12,21 @@ endif()
 set(_prefix "${BUILD_DIR}/isolation-prefix")
 file(REMOVE_RECURSE "${_prefix}")
 
+# The configuration MUST be forwarded. On a multi-config generator, `cmake
+# --install` with no --config picks a default of its own: Visual Studio uses
+# Release, so a Debug job installed nothing and failed with "cannot find
+# .../Release/parent_app.exe". Single-config generators have one output
+# directory and never noticed, which is why this only broke on Windows.
+# --config is accepted and ignored by single-config generators, so passing it
+# unconditionally is safe.
+set(_install_command ${CMAKE_COMMAND} --install "${BUILD_DIR}"
+                     --prefix "${_prefix}")
+if(BUILD_CONFIG)
+  list(APPEND _install_command --config "${BUILD_CONFIG}")
+endif()
+
 execute_process(
-  COMMAND ${CMAKE_COMMAND} --install "${BUILD_DIR}" --prefix "${_prefix}"
+  COMMAND ${_install_command}
   RESULT_VARIABLE _rc
   OUTPUT_VARIABLE _out
   ERROR_VARIABLE _err)

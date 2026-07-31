@@ -49,7 +49,11 @@ install(TARGETS parent_app RUNTIME DESTINATION bin)
 
 enable_testing()
 add_test(NAME parent_app COMMAND parent_app)
+# $<CONFIG> resolves to the configuration ctest is actually running, so the
+# isolation check installs what was built rather than whatever a multi-config
+# generator would otherwise default to.
 add_test(NAME parent_install_isolation
   COMMAND ${CMAKE_COMMAND}
           -DBUILD_DIR=${CMAKE_BINARY_DIR}
+          -DBUILD_CONFIG=$<CONFIG>
           -P ${CMAKE_CURRENT_SOURCE_DIR}/check_install_isolation.cmake)
