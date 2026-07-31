@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "playertrace",
+  "version": "0.1.0",
+  "description": "Engine-agnostic, privacy-conscious C++17 telemetry SDK for game developers.",
+  "license": "Apache-2.0",
+  "$comment-dependencies": "PlayerTrace vendors SQLite, nlohmann/json and Catch2 under third_party/, so the default build needs no vcpkg packages at all. Only the optional system-json feature pulls anything in.",
+  "dependencies": [],
+  "features": {
+    "system-json": {
+      "description": "Build against a vcpkg/system nlohmann-json instead of the vendored single header. Configure with -DPLAYERTRACE_USE_SYSTEM_JSON=ON. Catch2 is always vendored and is intentionally not offered here.",
+      "dependencies": [
+        "nlohmann-json"
+      ]
+    }
+  },
+  "$comment-baseline": "builtin-baseline is intentionally absent: it must name a real, tested vcpkg commit, and none has been pinned for this release. Add one (vcpkg x-update-baseline) before using the system-json feature from a manifest build; it is not required for the default vendored build."
+}

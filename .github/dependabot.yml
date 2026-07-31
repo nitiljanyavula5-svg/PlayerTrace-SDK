@@ -1,0 +1,17 @@
+# PlayerTrace vendors its C/C++ dependencies (SQLite, nlohmann/json, Catch2)
+# deliberately, so the installed static library is self-contained and a consumer
+# needs no package manager. Dependabot cannot track vendored amalgamations, so
+# only GitHub Actions is watched here; the vendored copies are refreshed by hand
+# and recorded in THIRD_PARTY_NOTICES.md.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"

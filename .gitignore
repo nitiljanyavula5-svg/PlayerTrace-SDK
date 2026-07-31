@@ -1,0 +1,101 @@
+# ---------------------------------------------------------------------------
+# Build directories
+# ---------------------------------------------------------------------------
+build/
+# Out-of-source build trees used by the docs and CI examples
+# (build-debug/, build-release/, build-consumer/, build-tidy/, ...).
+build-*/
+# Local install prefixes produced by `cmake --install`.
+install/
+install-*/
+out/
+cmake-build-*/
+Testing/
+
+# ---------------------------------------------------------------------------
+# CMake-generated files
+# ---------------------------------------------------------------------------
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+compile_commands.json
+CMakeUserPresets.json
+_deps/
+*.cmake.stamp
+
+# Ninja / Make generated
+.ninja_deps
+.ninja_log
+Makefile.in
+
+# ---------------------------------------------------------------------------
+# Generated telemetry artifacts (databases and NDJSON output produced by the
+# examples and tests). No source, fixture, or vendored file uses these names.
+# ---------------------------------------------------------------------------
+*.db
+*.db-wal
+*.db-shm
+*.ndjson
+pt_test_*
+
+# ---------------------------------------------------------------------------
+# Compiled objects and binaries
+# ---------------------------------------------------------------------------
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+
+# ---------------------------------------------------------------------------
+# Temporary files
+# ---------------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+
+# ---------------------------------------------------------------------------
+# IDE / editor
+# ---------------------------------------------------------------------------
+.vs/
+.vscode/
+.idea/
+.cache/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+
+# ---------------------------------------------------------------------------
+# Operating system
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---------------------------------------------------------------------------
+# Explicitly NOT ignored: vendored dependencies and their license files are a
+# required part of the build (the patterns above must never exclude them), as
+# are sources, docs, workflows and CMake inputs.
+# ---------------------------------------------------------------------------
+!third_party/**
+!.github/**
+!cmake/*.cmake.in

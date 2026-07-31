@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(Threads)
+
+# When PlayerTrace was built against a system/vcpkg nlohmann_json, the exported
+# target references nlohmann_json::nlohmann_json and the consumer must be able to
+# resolve it. With the vendored header there is no external dependency at all.
+set(PLAYERTRACE_USES_SYSTEM_JSON @PLAYERTRACE_NEEDS_JSON_DEPENDENCY@)
+if(PLAYERTRACE_USES_SYSTEM_JSON)
+  find_dependency(nlohmann_json CONFIG)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/playertraceTargets.cmake")
+
+check_required_components(playertrace)

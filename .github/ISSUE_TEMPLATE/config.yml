@@ -1,0 +1,5 @@
+# Contact links deliberately omitted: they require absolute URLs, and this
+# repository is kept host-agnostic. GitHub already surfaces "Report a security
+# vulnerability" in the issue chooser on its own once SECURITY.md is present and
+# private vulnerability reporting is enabled in repository settings.
+blank_issues_enabled: false

@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a capability for a future version.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        v0.1 is deliberately small. Please check the **Roadmap** section of
+        `README.md` first — several likely requests are already planned.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do that PlayerTrace makes hard today? Describe the
+        situation rather than a specific API, so alternatives stay on the table.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should the SDK do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, and why they were not enough.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints this must respect
+      description: >
+        PlayerTrace has non-negotiable properties. Confirm your proposal is
+        compatible with the ones that apply.
+      options:
+        - label: No exceptions escape the public API (failures are a `Status`)
+        - label: No blocking work on the caller's thread in `track()`
+        - label: Consent revocation stays fail-closed and synchronous
+        - label: No new required third-party dependency

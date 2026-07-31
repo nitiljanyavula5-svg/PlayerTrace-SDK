@@ -1,0 +1,97 @@
+name: Bug report
+description: Something in the SDK behaves incorrectly.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report.
+
+        **Please do not report security vulnerabilities here.** Follow the
+        process in `SECURITY.md` at the repository root instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you observe, and what did you expect instead?
+      placeholder: |
+        track() returned Ok but the event never reached my sink.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: >
+        The smallest program or test that shows the problem. A `Config` with the
+        values you used is usually enough to narrow it down quickly.
+      render: cpp
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: Returned Status
+      description: >
+        PlayerTrace reports failures as a `Status`, never by throwing. Paste the
+        `code()` and `message()` you received, plus anything your
+        `error_callback` logged.
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: PlayerTrace version
+      description: Tag, or commit SHA if you built from source.
+      placeholder: "v0.1.0 / 1a2b3c4"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Windows (MSVC)
+        - Windows (MinGW)
+        - Linux (GCC)
+        - Linux (Clang)
+        - macOS (Apple Clang)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: compiler
+    attributes:
+      label: Compiler and version
+      placeholder: "GCC 13.2 / MSVC 19.40 / Apple Clang 15"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: build-type
+    attributes:
+      label: Build type
+      options:
+        - Debug
+        - Release
+        - RelWithDebInfo
+        - MinSizeRel
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: >
+        Sanitizer output, whether it reproduces under
+        `ctest --repeat until-fail:50`, or how often you see it.
+    validations:
+      required: false

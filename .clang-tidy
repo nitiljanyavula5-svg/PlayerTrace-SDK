@@ -1,0 +1,137 @@
+# PlayerTrace clang-tidy configuration.
+#
+# Scope: CORRECTNESS. This selects the checks that find real defects — the
+# static analyzer, bug-prone patterns, portability, CERT rules, and the
+# performance checks whose findings are genuine rather than cosmetic.
+#
+# Whole families are deliberately NOT enabled. `modernize-*` and `readability-*`
+# would rewrite the established C++17 public API for style alone — adding
+# [[nodiscard]] to every accessor, braced-init returns, nested-namespace
+# collapsing, literal-suffix casing — several hundred findings with no defect
+# among them, and a diff large enough to bury anything real in review. A rule
+# that cannot honestly fail a build does not belong in a gate that treats
+# warnings as errors, and formatting is already enforced by clang-format.
+#
+# third_party/ is excluded by HeaderFilterRegex and by the runner's file list.
+---
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  portability-*,
+  performance-*,
+  cert-*,
+  misc-*,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-narrowing-conversions,
+  cppcoreguidelines-pro-type-static-cast-downcast,
+  cppcoreguidelines-virtual-class-destructor,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-empty-catch,
+  -bugprone-branch-clone,
+  -bugprone-unused-local-non-trivial-variable,
+  -cert-err33-c,
+  -misc-non-private-member-variables-in-classes,
+  -misc-no-recursion,
+  -misc-include-cleaner,
+  -misc-const-correctness,
+  -misc-use-internal-linkage,
+  -performance-enum-size,
+  -performance-unnecessary-value-param,
+  -performance-no-int-to-ptr,
+  -performance-trivially-destructible,
+  -cert-err58-cpp,
+  -cert-dcl21-cpp
+
+# Each suppression above is justified here, so none of them is a silent shrug.
+#
+# bugprone-easily-swappable-parameters
+#   Fires on ordinary (name, value) and (timeout, out) pairs across the API.
+#   Renaming or wrapping them changes the public surface and fixes no defect.
+#
+# bugprone-empty-catch
+#   PlayerTrace's exception barriers are deliberately empty: a throwing user
+#   log/error callback, a throwing sink cancel, and the worker's outermost
+#   containment barrier must swallow rather than propagate, because there is no
+#   safe place to rethrow and the alternative is terminating the host game. Each
+#   site carries a comment saying so. This is the documented design — see
+#   docs/reliability.md — not a hidden failure.
+#
+# bugprone-branch-clone
+#   Matches on branch SHAPE, not meaning. It fires where two arms are each a
+#   single call — session_.deactivate() versus session_.restore(previous), and
+#   terminal_status_ versus flush_result_locked(token) — which are opposite
+#   behaviours. Collapsing either would reintroduce a fixed defect.
+#
+# bugprone-unused-local-non-trivial-variable
+#   Does not count a variable whose ADDRESS is passed to an out-parameter as
+#   used, so it flags every `std::string error; if (!f(..., &error))` pair —
+#   the project's standard way of returning a diagnostic message alongside a
+#   bool. The variables are read immediately afterwards.
+#
+# cert-err33-c
+#   Flags unchecked returns from C calls that are deliberately best-effort:
+#   fflush/fclose during teardown and rollback, where the failure has already
+#   been recorded and there is nothing further the code could do. The paths
+#   that DO matter — the durable write, sync and truncate — are all checked.
+#
+# misc-const-correctness
+#   Local-variable advice only, dozens of findings, no defect among them. It
+#   also reads badly on RAII guards, where `const StmtGuard guard(stmt)`
+#   suggests the object does nothing.
+#
+# misc-use-internal-linkage
+#   Misidentifies out-of-line MEMBER function definitions (WorkerCore::run and
+#   friends) as file-local "variables" that could be made static. They cannot;
+#   the check is simply wrong here.
+#
+# performance-unnecessary-value-param
+#   The single finding is Client::track(std::string event_name,
+#   Properties properties) — a PUBLIC signature, and a deliberate one. Taking
+#   both by value lets a caller move into the call
+#   (client->track(std::move(name), std::move(props))) and pay nothing, which is
+#   the common path in a game loop. Switching to const& would forbid that and
+#   force a copy for every caller who already owns a temporary. It is also an
+#   API break for anyone who has already compiled against it. The check cannot
+#   see either consideration, so it is disabled here rather than obeyed — the
+#   parameter is not unnecessary, it is the interface.
+#
+# performance-no-int-to-ptr
+#   Every hit is SQLite's own SQLITE_TRANSIENT, which is defined as
+#   ((sqlite3_destructor_type)-1). It is the documented way to call
+#   sqlite3_bind_text and cannot be written any other way.
+#
+# performance-trivially-destructible
+#   Wants ~Client() defaulted at its first declaration. It cannot be: Client is
+#   a pimpl and Impl is incomplete in the header, so an inline destructor would
+#   not compile.
+#
+# misc-non-private-member-variables-in-classes
+#   Fires on the plain data-carrying types (Event, Config, EventBatch) whose
+#   public members ARE the API.
+#
+# misc-no-recursion
+#   Flags recursive descent that is correct and bounded.
+#
+# misc-include-cleaner
+#   Demands every transitive include be spelled out per translation unit; noisy,
+#   and it fights the deliberate internal/ header layering.
+#
+# performance-enum-size
+#   Suggests narrowing the underlying type of public enums (ErrorCode,
+#   ConsentState, LogLevel). That is an ABI-visible change to save a few bytes.
+#
+# cert-err58-cpp
+#   Fires on static objects with non-trivial constructors in the vendored Catch2
+#   registration path, not on first-party code.
+#
+# cert-dcl21-cpp
+#   Postfix-operator return-const advice, obsolete under C++17 move semantics.
+
+WarningsAsErrors: '*'
+
+# Cover every first-party header, including the internal ones under src/internal
+# (an earlier pattern required a "playertrace" path segment, so those were
+# silently excluded). third_party/ contains no include/ or src/ segment and is
+# therefore still skipped.
+HeaderFilterRegex: '^.*[/\\](include|src)[/\\].*'
+FormatStyle: file

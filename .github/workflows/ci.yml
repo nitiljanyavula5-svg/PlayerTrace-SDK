@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: ${{ matrix.os }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      # STAGED MSVC ROLLOUT: warnings-as-errors is enforced on GCC/Clang now.
+      # On MSVC it stays OFF for this first native run because the code has
+      # never been compiled with /W4 there and unknown warnings would block the
+      # release for reasons unrelated to correctness. Once a native MSVC run is
+      # green, flip the Windows value to 'ON' and re-run before tagging.
+      # Until then finding #18 remains PARTIALLY resolved.
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DPLAYERTRACE_ENABLE_WARNINGS=ON
+          -DPLAYERTRACE_ENABLE_WERROR=${{ matrix.os == 'windows-latest' && 'OFF' || 'ON' }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} -j 4
+
+      - name: Test
+        run: ctest --test-dir build --build-config ${{ matrix.build_type }} --output-on-failure
+
+      # The release checklist requires 50 consecutive passes on every platform;
+      # this job is what produces that evidence.
+      - name: Repeat concurrency-sensitive tests
+        run: >
+          ctest --test-dir build --build-config ${{ matrix.build_type }}
+          -R playertrace_tests_threading --repeat until-fail:50 --output-on-failure
+
+      - name: Install
+        run: cmake --install build --config ${{ matrix.build_type }} --prefix ${{ github.workspace }}/install
+
+      - name: Consumer test (find_package + installed legal files)
+        run: |
+          cmake -S packaging/consumer-test -B build-consumer -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install
+          cmake --build build-consumer --config ${{ matrix.build_type }} -j 4
+          ctest --test-dir build-consumer --build-config ${{ matrix.build_type }} --output-on-failure
+
+      - name: Co-link test (application supplies its own SQLite)
+        run: |
+          cmake -S packaging/colink-test -B build-colink -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install -DPLAYERTRACE_SQLITE_AMALGAMATION=${{ github.workspace }}/third_party/sqlite/sqlite3.c
+          cmake --build build-colink --config ${{ matrix.build_type }} -j 4
+          ctest --test-dir build-colink --build-config ${{ matrix.build_type }} --output-on-failure
+
+      - name: Subproject isolation test
+        run: |
+          cmake -S packaging/parent-test -B build-parent -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DPLAYERTRACE_SOURCE_DIR=${{ github.workspace }}
+          cmake --build build-parent --config ${{ matrix.build_type }} -j 4
+          ctest --test-dir build-parent --build-config ${{ matrix.build_type }} --output-on-failure
+
+  system-json:
+    name: ubuntu / system nlohmann_json package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Uses the in-repo fixture package so the PLAYERTRACE_USE_SYSTEM_JSON code
+      # path and the find_dependency() it must emit are exercised without vcpkg.
+      - name: Configure, build and install with the system-JSON path
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug \
+            -DPLAYERTRACE_USE_SYSTEM_JSON=ON \
+            -DPLAYERTRACE_BUILD_TESTS=OFF -DPLAYERTRACE_BUILD_EXAMPLES=OFF \
+            -DCMAKE_PREFIX_PATH=${{ github.workspace }}/packaging/test-fixtures/nlohmann_json
+          cmake --build build -j 4
+          cmake --install build --prefix ${{ github.workspace }}/install
+      - name: Isolated consumer must resolve the recorded dependency
+        run: |
+          cmake -S packaging/consumer-test -B build-consumer -DCMAKE_BUILD_TYPE=Debug \
+            -Dplayertrace_DIR=${{ github.workspace }}/install/lib/cmake/playertrace \
+            -DCMAKE_PREFIX_PATH=${{ github.workspace }}/packaging/test-fixtures/nlohmann_json
+          cmake --build build-consumer -j 4
+          ctest --test-dir build-consumer --output-on-failure
+
+  sanitizers:
+    name: ubuntu / ASan+UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure (sanitizers)
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DPLAYERTRACE_ENABLE_WARNINGS=ON
+          -DPLAYERTRACE_ENABLE_WERROR=ON
+          -DPLAYERTRACE_ENABLE_SANITIZERS=ON
+      - name: Build
+        run: cmake --build build -j 4
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build --output-on-failure
+
+  thread-sanitizer:
+    name: ubuntu / ThreadSanitizer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TSan is the only tool that can evaluate the admission, consent and
+      # shutdown races; ASan/UBSan cannot see them. It is not available on the
+      # MinGW toolchain used for local development, so this job is the first
+      # real run.
+      - name: Configure (ThreadSanitizer)
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
+      - name: Build
+        run: cmake --build build -j 4
+      - name: Test
+        env:
+          TSAN_OPTIONS: halt_on_error=1:second_deadlock_stack=1
+        run: >
+          ctest --test-dir build -R playertrace_tests_threading
+          --repeat until-fail:5 --output-on-failure
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Check formatting
+        run: |
+          find include src tests examples packaging -type f \( -name '*.hpp' -o -name '*.cpp' \) \
+            -not -path '*/third_party/*' -print0 \
+            | xargs -0 clang-format --dry-run --Werror
+
+  tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+      - name: Configure with a compile database
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      # Analyze first-party sources only. The vendored amalgamation is excluded
+      # by path; its findings are not actionable for this project.
+      - name: Run clang-tidy
+        run: |
+          FILES=$(find src -name '*.cpp' -not -path '*/third_party/*')
+          echo "Analyzing:"; echo "$FILES"
+          clang-tidy -p build --warnings-as-errors='*' $FILES

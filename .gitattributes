@@ -1,0 +1,21 @@
+# Normalize line endings so a checkout on Windows and one on Linux produce
+# byte-identical sources. Without this, CRLF conversion changes the vendored
+# SQLite amalgamation and can break byte-exact test fixtures.
+* text=auto eol=lf
+
+# Vendored dependencies are never modified locally; keep them exactly as
+# published upstream and out of language statistics and diffs.
+third_party/** linguist-vendored
+third_party/** -diff
+
+# Generated file: regenerate with tools/generate_sqlite_prefix.py rather than
+# editing, and keep it out of diffs.
+third_party/sqlite/playertrace_sqlite_prefix.h linguist-generated -diff
+
+# Binary-ish artifacts that must never be line-ending converted.
+*.png binary
+*.zip binary
+*.db binary
+
+# NDJSON output is newline-delimited by definition.
+*.ndjson text eol=lf
