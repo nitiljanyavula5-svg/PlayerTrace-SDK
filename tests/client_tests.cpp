@@ -265,7 +265,12 @@ TEST_CASE("Concurrent producers deliver in gap-free sequence order",
   std::vector<std::thread> threads;
   threads.reserve(kThreads);
   for (int t = 0; t < kThreads; ++t) {
-    threads.emplace_back([&client, &accepted, t] {
+    // kPerThread is captured explicitly even though it is a constexpr read in a
+    // constant expression, which the standard does not require to be captured.
+    // MSVC under /permissive- rejects the implicit form with C3493; GCC and
+    // Clang accept it. Capturing a constexpr by copy is valid everywhere, so
+    // this is portable rather than an MSVC-only workaround.
+    threads.emplace_back([&client, &accepted, t, kPerThread] {
       for (int i = 0; i < kPerThread; ++i) {
         if (client->track("concurrent", {{"thread", std::int64_t{t}}}).ok()) {
           accepted.fetch_add(1);
